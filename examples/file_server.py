@@ -9,7 +9,7 @@ async def main():
     # This tells PyCyphal to use the serial transport and sets the Node-ID
     os.environ["UAVCAN__SERIAL__IFACE"] = "/dev/ttyUSB0"  # Change to your port
     os.environ["UAVCAN__SERIAL__BAUDRATE"] = "115200"     # Set baudrate
-    os.environ["UAVCAN__NODE__ID"] = "42"                 # Fixed ID (0-127)
+    os.environ["UAVCAN__NODE__ID"] = "121"                 # Fixed ID (0-127)
 
     # 2. INITIALIZE THE NODE
     # make_node() reads the environment variables above automatically
@@ -21,9 +21,9 @@ async def main():
 
     # 3. DEFINE ROOTS & START FILE SERVER
     # The server will listen for uavcan.file.Write requests on the serial bus
-    roots = [Path("./shared_files")]
+    roots = [Path("/tmp/received")]
     file_server = pycyphal.application.file.FileServer(node, roots)
-    
+
     print(f"FileServer running on Serial Node {node.id}. Listening for writes...")
 
     try:
