@@ -8,6 +8,7 @@ import pycyphal
 import pycyphal.application
 import pycyphal.application.file
 
+RECEIVER_FOLDER = "/tmp/received"
 
 # ------------------------------------------------------------
 # GLOBAL LOGGING SETUP
@@ -25,6 +26,7 @@ log = logging.getLogger("FileServer")
 class LoggingFileServer(pycyphal.application.file.FileServer):
 
     async def _serve_wr(self, request, meta):
+
         try:
             path = request.path.path.tobytes().decode(errors="ignore")
         except Exception:
@@ -103,7 +105,7 @@ async def main():
     # --------------------------------------------------------
     # 3. Start instrumented file server
     # --------------------------------------------------------
-    root = Path("/tmp/received")
+    root = Path(RECEIVER_FOLDER)
     root.mkdir(parents=True, exist_ok=True)
 
     file_server = LoggingFileServer(node, [root])
