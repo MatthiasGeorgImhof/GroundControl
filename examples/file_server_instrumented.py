@@ -4,6 +4,7 @@ import os
 import logging
 from pathlib import Path
 
+import cyclic_tid_patch
 import pycyphal
 import pycyphal.application
 import pycyphal.application.file
@@ -101,6 +102,9 @@ async def main():
 
     log.info("Node started: id=%s", node.id)
     log.info("Transport: %s", node.presentation.transport)
+
+    transport = node.presentation.transport
+    log.info(f"Transport modulo = {transport.protocol_parameters.transfer_id_modulo}")
 
     # --------------------------------------------------------
     # 3. Start instrumented file server
