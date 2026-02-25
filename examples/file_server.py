@@ -1,35 +1,66 @@
-import asyncio
-import os
-import pycyphal
-import pycyphal.application.file
-from pathlib import Path
-
 async def main():
-    # 1. CONFIGURE VIA ENVIRONMENT (Registers)
-    # This tells PyCyphal to use the serial transport and sets the Node-ID
-    os.environ["UAVCAN__SERIAL__IFACE"] = "/dev/ttyUSB0"  # Change to your port
-    os.environ["UAVCAN__SERIAL__BAUDRATE"] = "115200"     # Set baudrate
-    os.environ["UAVCAN__NODE__ID"] = "121"                 # Fixed ID (0-127)
+    # --------------------------------------------------------
+    # CLI argument parsing
+    # --------------------------------------------------------
+    parser = argparse.ArgumentParser(description="Cyphal File Server")
+    parser.add_argument("--iface", help="Serial interface")
+    parser.add_argument("--baud", help="Baud rate")
+    parser.add_argument("--id", help="Local node-ID")
+    parser.add_argument("--logfile", help="Optional log file")
+    parser.add_argument("--loglevel", help="Logging level (INFO/DEBUG/WARNING)")
+    args = parser.parse_args()
 
-    # 2. INITIALIZE THE NODE
-    # make_node() reads the environment variables above automatically
+    # --------------------------------------------------------
+    # Resolve configuration priority:
+    # CLI > ENV > DEFAULTS
+    # --------------------------------------------------------
+    iface = args.iface or os.environ.get("UAVCAN__SERIAL__IFACE") or DEFAULT_IFACE
+    baud = args.baud or os.environ.get("UAVCAN__SERIAL__BAUDRATE") or DEFAULT_BAUD
+    node_id = args.id or os.environ.get("UAVCAN__NODE__ID") or DEFAULT_NODE_ID
+
+    log_file = args.logfile or os.environ.get("FILESERVER_LOG") or DEFAULT_LOGFILE
+    log_level = args.loglevel or os.environ.get("FILESERVER_LOGLEVEL") or DEFAULT_LOGLEVEL
+
+    # Apply to environment so PyCyphal picks them up
+    os.environ["UAVCAN__SERIAL__IFACE"] = iface
+    os.environ["UAVCAN__SERIAL__BAUDRATE"] = baud
+    os.environ["UAVCAN__NODE__ID"] = node_id
+
+    # --------------------------------------------------------
+    # Logging setup
+    # --------------------------------------------------------
+    level = getattr(logging, log_level.upper())
+    global log
+    log = setup_logging(log_file=log_file, level=level)
+
+    log.info(f"Starting Cyphal node on {iface}:{baud} with Node-ID {node_id}")
+
+    # --------------------------------------------------------
+    # Create node (registers.db)
+    # --------------------------------------------------------
     node = pycyphal.application.make_node(
         pycyphal.application.NodeInfo(name="org.example.serial_file_server"),
-        "registers.db" # Persistent storage for settings
+        "registers.db",
     )
     node.start()
 
-    # 3. DEFINE ROOTS & START FILE SERVER
-    # The server will listen for uavcan.file.Write requests on the serial bus
-    roots = [Path("/tmp/received")]
-    file_server = pycyphal.application.file.FileServer(node, roots)
+    log.info("Node started: id=%s", node.id)
+    log.info("Transport: %s", node.presentation.transport)
 
-    print(f"FileServer running on Serial Node {node.id}. Listening for writes...")
+    # --------------------------------------------------------
+    # File server
+    # --------------------------------------------------------
+    root = Path(RECEIVER_FOLDER)
+    root.mkdir(parents=True, exist_ok=True)
 
+    file_server = LoggingFileServer(node, [root])
+    log.info("FileServer ready. Root directory: %s", root)
+
+    # --------------------------------------------------------
+    # Run forever
+    # --------------------------------------------------------
     try:
-        await asyncio.get_running_loop().create_future()  # Run forever
+        await asyncio.get_running_loop().create_future()
     finally:
         node.close()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+        log.info("Node closed")

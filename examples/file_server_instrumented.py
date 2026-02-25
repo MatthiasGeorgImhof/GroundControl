@@ -16,7 +16,9 @@ RECEIVER_FOLDER = "/tmp/received"
 # ------------------------------------------------------------
 logging.basicConfig(
     level=logging.DEBUG,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    filename="/tmp/server.log",
+    filemode="w",
 )
 log = logging.getLogger("FileServer")
 
@@ -48,6 +50,11 @@ class LoggingFileServer(pycyphal.application.file.FileServer):
         if request.offset == 0:
             full_path.parent.mkdir(parents=True, exist_ok=True)
             full_path.write_bytes(b"")
+
+        if (not full_path.is_file()):
+            log.error("WRITE REQUEST: file %s does not exist", full_path)
+        else:
+            log.error("WRITE REQUEST: file %s does exists", full_path)
 
         result = await super()._serve_wr(request, meta)
 
