@@ -68,10 +68,9 @@ class LoggingFileServer(pycyphal.application.file.FileServer):
             path = "<decode-error>"
 
         log.info(
-            "READ REQUEST: path=%s offset=%d size=%d from=%s",
+            "READ REQUEST: path=%s offset=%d from=%d",
             path,
             int(request.offset),
-            int(request.size),
             getattr(meta, "client_node_id", None),
         )
 
