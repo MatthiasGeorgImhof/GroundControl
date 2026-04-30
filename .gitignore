@@ -8,3 +8,14 @@ __pycache__/
 *.log
 *.bak
 *.tmp
+# Eclipse
+.metadata
+.settings
+[Rr]elease/
+[Dd]ebug/
+.launch
+USB_DEVICE
+*.bak
+*.bak?
+TestRunner/bin
+TestRunner/obj

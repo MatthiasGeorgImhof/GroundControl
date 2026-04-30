@@ -192,7 +192,7 @@ def decode_line(hex_line: str):
     if raw[0] != 0x00:
         raise ValueError("Frame must begin with 0x00")
 
-    encoded = raw[1:]
+    encoded = raw[1:-1]
     decoded = cobs_decode(encoded)
     parse_header(decoded)
 

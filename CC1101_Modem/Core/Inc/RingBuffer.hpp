@@ -27,6 +27,12 @@ public:
         tail = (tail + 1) % Size;
         return true;
     }
+    bool peek(uint8_t &val) {
+        if (head == tail) return false;
+        val = buffer[tail];
+        return true;
+    }
+
     size_t count() const {
         return (head >= tail) ? (head - tail) : (Size - tail + head);
     }
